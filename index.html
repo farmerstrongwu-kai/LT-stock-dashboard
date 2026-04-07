@@ -296,12 +296,18 @@ function renderMacdRadar(stocks) {
     const dayChg = s.day_chg != null
       ? `<span style="color:${s.day_chg>=0?'#4ade80':'#f87171'}">${s.day_chg>=0?'+':''}${s.day_chg.toFixed(2)}%</span>`
       : '';
+    const monthChg = s.month_chg != null
+      ? `<span style="color:${s.month_chg>=0?'#4ade80':'#f87171'};font-size:0.56rem">月${s.month_chg>=0?'+':''}${s.month_chg.toFixed(1)}%</span>`
+      : '';
+    const contextWarn = (ms==='bull_exp'||ms==='golden') && s.month_chg!=null && s.month_chg<-5
+      ? `<div style="font-size:0.54rem;color:#fb923c;margin-top:2px">⚠️ 短線反彈，月線仍弱</div>` : '';
     return `
       <div class="macd-item ${meta.cls}" style="${urgentBorder}">
         <div class="mi-name">${esc(names[sym]||sym)}</div>
         <div class="mi-status" style="color:${meta.color}">${esc(meta.label)}</div>
         <div class="mi-hint" style="color:${meta.color}88">${esc(meta.hint)}</div>
-        <div class="mi-price">${esc(priceStr)} ${dayChg}</div>
+        <div class="mi-price">${esc(priceStr)} ${dayChg} ${monthChg}</div>
+        ${contextWarn}
       </div>`;
   }).join('');
   document.getElementById('macd-radar-grid').innerHTML = html;
