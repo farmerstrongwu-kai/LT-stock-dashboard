@@ -41,6 +41,21 @@ body{
 #new-badge{display:none;background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green);font-size:0.55rem;padding:1px 6px;border-radius:3px;animation:fadein 0.4s}
 @keyframes fadein{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 
+/* ── 距買點進度條 ── */
+.buy-progress{margin-bottom:6px}
+.bp-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.bp-label-left{font-size:0.56rem;color:var(--dim)}
+.bp-label-right{font-size:0.58rem;font-weight:600}
+.bp-track{height:5px;background:#1e2130;border-radius:3px;overflow:hidden;position:relative}
+.bp-fill{height:100%;border-radius:3px;transition:width 0.5s}
+.bp-marker{position:absolute;top:-2px;height:9px;width:2px;background:#fbbf24;border-radius:1px}
+
+/* ── 距支撐標籤 ── */
+.dist-tag{display:inline-flex;align-items:center;gap:3px;font-size:0.54rem;padding:1px 6px;border-radius:3px;margin-left:6px}
+.dist-near{background:#0d2818;color:#4ade80;border:1px solid #166534}
+.dist-mid{background:#1a1200;color:#fbbf24;border:1px solid #92400e}
+.dist-far{background:#13141a;color:#3a3d4a;border:1px solid #252830}
+
 /* ── MACD 起漲雷達 ── */
 #macd-radar{margin-bottom:10px}
 .macd-radar-title{font-size:0.58rem;color:#3a4a5a;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px}
@@ -274,6 +289,54 @@ const cc=v=>v==null?"#666":v>0?"#4ade80":v<0?"#f87171":"#666";
 const cs=v=>v==null?"—":(v>0?"+":"")+v.toFixed(2)+"%";
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
+// ── 距買點進度條 ──
+function renderBuyProgress(s) {
+  if (s.is_market || !s.buy_low || !s.buy_high || !s.price) return '';
+  const price = s.price;
+  const buyLow = s.buy_low;
+  const buyHigh = s.buy_high;
+  const support = s.support || buyLow * 0.97;
+  const resistance = s.resistance || buyHigh * 1.1;
+  const range = resistance - support;
+  if (range <= 0) return '';
+  const pricePct = Math.min(100, Math.max(0, (price - support) / range * 100));
+  const buyLowPct = Math.min(100, Math.max(0, (buyLow - support) / range * 100));
+  const buyHighPct = Math.min(100, Math.max(0, (buyHigh - support) / range * 100));
+  const buyZoneWidth = buyHighPct - buyLowPct;
+  const distToBuy = price > buyHigh
+    ? ((price - buyHigh) / price * 100).toFixed(1)
+    : price < buyLow
+    ? ((buyLow - price) / price * 100).toFixed(1)
+    : null;
+  const inZone = price >= buyLow && price <= buyHigh;
+  const labelColor = inZone ? '#4ade80' : price > buyHigh ? '#fbbf24' : '#f87171';
+  const labelText = inZone
+    ? '✓ 已在買點區間'
+    : price > buyHigh
+    ? `距買點 -${distToBuy}%`
+    : `低於買點 +${distToBuy}%`;
+  return `
+    <div class="buy-progress">
+      <div class="bp-label">
+        <span class="bp-label-left">買點進度 ${buyLow}～${buyHigh}</span>
+        <span class="bp-label-right" style="color:${labelColor}">${labelText}</span>
+      </div>
+      <div class="bp-track">
+        <div style="position:absolute;left:${buyLowPct}%;width:${buyZoneWidth}%;height:100%;background:#92400e;opacity:0.6;border-radius:3px"></div>
+        <div class="bp-marker" style="left:calc(${pricePct}% - 1px)"></div>
+      </div>
+    </div>`;
+}
+
+// ── 距支撐標籤 ──
+function renderDistTag(s) {
+  if (s.is_market || s.dist_to_support == null) return '';
+  const d = s.dist_to_support;
+  if (d <= 3) return `<span class="dist-tag dist-near">距支撐 ${d}%</span>`;
+  if (d <= 8) return `<span class="dist-tag dist-mid">距支撐 ${d}%</span>`;
+  return `<span class="dist-tag dist-far">距支撐 ${d}%</span>`;
+}
+
 // ── MACD 起漲雷達渲染 ──
 function renderMacdRadar(stocks) {
   const targets = ['0050.TW','SPY','2330.TW','2454.TW'];
@@ -431,6 +494,7 @@ function renderCard(s) {
   if(!s.is_market){
     const rn_ok=s.rr_now_ok,re_ok=s.rr_entry_ok;
     waveBlock=`
+      ${renderBuyProgress(s)}
       <div class="grid2" style="margin-bottom:5px">
         <div class="ptag"><div class="pl">買點區間</div><div class="pv" style="color:#4ade80">${s.buy_low}~${s.buy_high}</div></div>
         <div class="ptag"><div class="pl">ATR停損 (-${s.stop_pct}%)</div><div class="pv" style="color:#f87171">${s.stop_atr}</div></div>
@@ -469,6 +533,7 @@ function renderCard(s) {
           <span class="stock-name" style="color:${s.is_market?"#8899bb":"#e2e8f0"}">${esc(s.name)}</span>
           ${s.is_market?'<span class="market-tag">大盤</span>':''}
           <span class="symbol">${esc(s.symbol)}</span>
+          ${!s.is_market?renderDistTag(s):''}
         </div>
         <div style="display:flex;align-items:center">
           <span class="lamp-badge" style="background:${lc.bg};color:${lc.fg};border:1px solid ${lc.bd}">${lc.label}</span>
