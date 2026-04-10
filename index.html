@@ -219,12 +219,71 @@ body{
 .lt-pos-box .lp-item{font-size:0.65rem;color:#7aaad0}
 .lt-pos-box .lp-pnl{font-size:0.7rem;font-weight:700;margin-left:auto}
 
-/* 五關 */
+/* 五關 — 持倉卡調淡 */
 .gates{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
 .gate{font-size:0.58rem;border-radius:4px;padding:2px 6px;white-space:nowrap}
 .gate.ok{background:#0d2818;color:var(--green);border:1px solid #166534}
 .gate.no{background:#13141a;color:#3a3d4a;border:1px solid #252830}
 .gate.pnd{background:var(--border);color:var(--dim);border:1px solid var(--border2)}
+.gates.dimmed .gate.ok{background:#0a100a;color:#2a4a2a;border-color:#1a2a1a}
+.gates.dimmed .gate.no{background:#0f1010;color:#252828;border-color:#1a1d1d}
+.gates.dimmed .gate.pnd{background:#0f1010;color:#252525;border-color:#1a1a1a}
+
+/* 燈號調淡（持倉卡用）*/
+.lamp-badge.dimmed{opacity:0.35;font-size:0.54rem}
+
+/* 分區標題 */
+.section-divider{
+  display:flex;align-items:center;gap:8px;
+  margin:14px 0 8px;
+}
+.section-divider .sd-line{flex:1;height:1px}
+.section-divider .sd-label{
+  font-size:0.62rem;font-weight:700;letter-spacing:0.1em;
+  text-transform:uppercase;white-space:nowrap;
+  padding:3px 10px;border-radius:4px;
+}
+.section-divider.attack .sd-line{background:linear-gradient(to right,transparent,#166534)}
+.section-divider.attack .sd-label{color:#4ade80;background:#081408;border:1px solid #166534}
+.section-divider.defense .sd-line{background:linear-gradient(to right,transparent,#1e3a5f)}
+.section-divider.defense .sd-label{color:#4a7aaa;background:#0a0f1a;border:1px solid #1e3a5f}
+
+/* 部位總覽條 */
+#portfolio-bar{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  margin-bottom:6px;
+}
+.pf-block{border-radius:8px;padding:8px 12px}
+.pf-block.attack{background:#081408;border:1px solid #166534}
+.pf-block.defense{background:#0a0f1a;border:1px solid #1e3a5f}
+.pf-label{font-size:0.54rem;margin-bottom:3px;font-weight:600;letter-spacing:0.06em}
+.pf-block.attack .pf-label{color:#2a6a3a}
+.pf-block.defense .pf-label{color:#2a4a6a}
+.pf-val{font-size:1.15rem;font-weight:700;font-variant-numeric:tabular-nums}
+.pf-block.attack .pf-val{color:#4ade80}
+.pf-block.defense .pf-val{color:#4a7aaa}
+.pf-sub{font-size:0.56rem;margin-top:2px}
+.pf-block.attack .pf-sub{color:#2a5a3a}
+.pf-block.defense .pf-sub{color:#2a3a5a}
+
+/* 進攻使用率條 */
+.usage-bar-wrap{margin-bottom:10px;padding:0 2px}
+.usage-bar-label{display:flex;justify-content:space-between;font-size:0.56rem;color:#2a4a3a;margin-bottom:3px}
+.usage-bar-track{height:4px;background:#0d1a0d;border-radius:2px;overflow:hidden}
+.usage-bar-fill{height:100%;border-radius:2px;background:linear-gradient(to right,#166534,#4ade80);transition:width 0.5s}
+
+/* P0雙欄 */
+#cc-trigger-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+
+/* 持倉卡邊框強化 */
+.card.holding-card{border-color:#0d2818}
+.card.holding-card.open{border-color:#166534}
+.card.defense-card{border-color:#0d1a2a}
+.card.defense-card.open{border-color:#1e3a5f}
+
+/* 市值大字 */
+.pos-mv{font-size:1.2rem;font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums}
+.pos-shares{font-size:0.65rem;color:#4a6a7a}
 
 /* 分數條 */
 .score-bar{display:flex;align-items:center;gap:8px}
@@ -303,20 +362,79 @@ body{
     </div>
   </div>
 
-  <!-- ② 0050 回撤觸發層次 -->
-  <div id="cc-trigger">
-    <div class="cc-label" style="margin-bottom:6px">0050 回撤觸發</div>
-    <div class="trigger-bar" id="trigger-bar">
-      <div class="trigger-dot"></div>
-      <div style="flex:1">
-        <div class="trigger-main-text" id="trigger-main-text">載入中...</div>
-        <div class="trigger-action" id="trigger-action">—</div>
-      </div>
+  <!-- ① 衰退概率 + 進攻上限 -->
+  <div id="cc-recession" style="padding:8px 14px;border-bottom:1px solid #141820;display:flex;align-items:center;gap:10px">
+    <div style="flex:1">
+      <div class="cc-label">衰退概率（JPM）</div>
+      <div id="cc-recession-val" style="font-size:0.88rem;font-weight:700;color:#fbbf24">—</div>
+      <div id="cc-recession-date" style="font-size:0.52rem;color:#2a3a4a;margin-top:1px">—</div>
     </div>
-    <div class="trigger-ma-row" id="trigger-ma-row"></div>
+    <div style="flex:1;text-align:center">
+      <div class="cc-label">進攻上限</div>
+      <div id="cc-attack-limit" style="font-size:0.88rem;font-weight:700;color:#4ade80">—</div>
+    </div>
+    <div style="flex:1;text-align:right">
+      <div class="cc-label">已使用</div>
+      <div id="cc-attack-usage" style="font-size:0.88rem;font-weight:700">—</div>
+    </div>
   </div>
 
-  <!-- ③ 今日行動一句話 -->
+  <!-- ② 部位總市值 -->
+  <div style="padding:10px 14px;border-bottom:1px solid #141820">
+    <div class="cc-label" style="margin-bottom:6px">部位市值</div>
+    <div id="portfolio-bar">
+      <div class="pf-block attack">
+        <div class="pf-label">進攻部位</div>
+        <div class="pf-val" id="pf-attack-val">—</div>
+        <div class="pf-sub" id="pf-attack-sub">—</div>
+      </div>
+      <div class="pf-block defense">
+        <div class="pf-label">防守部位</div>
+        <div class="pf-val" id="pf-defense-val">—</div>
+        <div class="pf-sub">BRK-B + GLD</div>
+      </div>
+    </div>
+    <div class="usage-bar-wrap">
+      <div class="usage-bar-label">
+        <span>進攻使用率</span>
+        <span id="usage-pct-label">—</span>
+      </div>
+      <div class="usage-bar-track">
+        <div class="usage-bar-fill" id="usage-bar-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 0050 + SPY 回撤觸發（雙欄）-->
+  <div id="cc-trigger" style="padding:10px 14px;border-bottom:1px solid #141820">
+    <div class="cc-label" style="margin-bottom:6px">回撤觸發監控</div>
+    <div id="cc-trigger-grid">
+      <div>
+        <div style="font-size:0.52rem;color:#2a3a4a;margin-bottom:4px">台股 0050</div>
+        <div class="trigger-bar" id="trigger-bar-tw">
+          <div class="trigger-dot"></div>
+          <div style="flex:1;min-width:0">
+            <div class="trigger-main-text" id="trigger-text-tw" style="font-size:0.65rem">載入中...</div>
+            <div class="trigger-action" id="trigger-action-tw" style="font-size:0.56rem">—</div>
+          </div>
+        </div>
+        <div class="trigger-ma-row" id="trigger-ma-tw" style="margin-top:4px"></div>
+      </div>
+      <div>
+        <div style="font-size:0.52rem;color:#2a3a4a;margin-bottom:4px">美股 SPY</div>
+        <div class="trigger-bar" id="trigger-bar-us">
+          <div class="trigger-dot"></div>
+          <div style="flex:1;min-width:0">
+            <div class="trigger-main-text" id="trigger-text-us" style="font-size:0.65rem">載入中...</div>
+            <div class="trigger-action" id="trigger-action-us" style="font-size:0.56rem">—</div>
+          </div>
+        </div>
+        <div class="trigger-ma-row" id="trigger-ma-us" style="margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 今日行動一句話 -->
   <div id="cc-action">
     <div class="cc-label">今日行動</div>
     <div id="cc-action-text">—</div>
@@ -380,6 +498,29 @@ const cs=v=>v==null?"—":(v>0?"+":"")+v.toFixed(2)+"%";
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
 // ══ 作戰室渲染 ══
+function renderTriggerBlock(tr, barId, textId, actionId, maId, priceKey) {
+  if (!tr) return;
+  const bar = document.getElementById(barId);
+  bar.className = 'trigger-bar ' + (tr.trigger_status || 'warning');
+  document.getElementById(textId).textContent = tr.trigger_text || '—';
+  document.getElementById(actionId).textContent = tr.trigger_action || '—';
+  const price = tr[priceKey];
+  let maHtml = '';
+  if (tr.ma60 != null) {
+    const d60 = tr.dist_ma60;
+    maHtml += `<span class="trigger-ma-chip ${d60>=0?'above':'below'}">MA60 ${d60>=0?'+':''}${d60}%</span>`;
+  }
+  if (tr.ma120 != null) {
+    const d120 = tr.dist_ma120;
+    maHtml += `<span class="trigger-ma-chip ${d120>=0?'above':'below'}">MA120 ${d120>=0?'+':''}${d120}%</span>`;
+  }
+  if (tr.ma240 != null) {
+    const d240 = tr.dist_ma240;
+    maHtml += `<span class="trigger-ma-chip ${d240>=0?'above':'below'}">MA240 ${d240>=0?'+':''}${d240}%</span>`;
+  }
+  document.getElementById(maId).innerHTML = maHtml;
+}
+
 function renderCommandCenter(data) {
   const ms = MARKET_STYLE[data.market_status] || MARKET_STYLE.unknown;
 
@@ -398,69 +539,76 @@ function renderCommandCenter(data) {
   document.getElementById('cc-vix-label').textContent = vs.label;
   document.getElementById('cc-vix-label').style.color = vs.c;
 
-  // ② 0050 回撤觸發
-  const tr = data.trigger;
-  if (tr) {
-    const bar = document.getElementById('trigger-bar');
-    bar.className = 'trigger-bar ' + (tr.trigger_status || 'warning');
-    document.getElementById('trigger-main-text').textContent = tr.trigger_text || '—';
-    document.getElementById('trigger-action').textContent = tr.trigger_action || '—';
+  // ① 衰退概率 + 進攻上限
+  const pf = data.portfolio;
+  if (pf) {
+    const rp = pf.recession_prob;
+    const rpColor = rp > 35 ? '#fbbf24' : rp >= 20 ? '#fb923c' : '#4ade80';
+    document.getElementById('cc-recession-val').textContent = `${rp}%`;
+    document.getElementById('cc-recession-val').style.color = rpColor;
+    document.getElementById('cc-recession-date').textContent = pf.recession_date || '—';
+    document.getElementById('cc-attack-limit').textContent =
+      `${pf.attack_limit_pct}% / ${pf.attack_limit_wan}萬`;
+    const usagePct = pf.attack_usage_pct;
+    const usageColor = usagePct >= 95 ? '#f87171' : usagePct >= 80 ? '#fbbf24' : '#4ade80';
+    document.getElementById('cc-attack-usage').textContent = `${usagePct}%`;
+    document.getElementById('cc-attack-usage').style.color = usageColor;
 
-    // MA 距離小標籤
-    let maHtml = '';
-    if (tr.ma60 != null) {
-      const d60 = tr.dist_ma60;
-      const cls60 = d60 >= 0 ? 'above' : 'below';
-      maHtml += `<span class="trigger-ma-chip ${cls60}">季線MA60 ${d60 >= 0 ? '+' : ''}${d60}%</span>`;
-    }
-    if (tr.ma120 != null) {
-      const d120 = tr.dist_ma120;
-      const cls120 = d120 >= 0 ? 'above' : 'below';
-      maHtml += `<span class="trigger-ma-chip ${cls120}">半年MA120 ${d120 >= 0 ? '+' : ''}${d120}%</span>`;
-    }
-    if (tr.ma240 != null) {
-      const d240 = tr.dist_ma240;
-      const cls240 = d240 >= 0 ? 'above' : 'below';
-      maHtml += `<span class="trigger-ma-chip ${cls240}">年線MA240 ${d240 >= 0 ? '+' : ''}${d240}%</span>`;
-    }
-    document.getElementById('trigger-ma-row').innerHTML = maHtml;
+    // 部位市值
+    document.getElementById('pf-attack-val').textContent =
+      pf.attack_mv_wan > 0 ? `${pf.attack_mv_wan}萬` : '—';
+    document.getElementById('pf-attack-sub').textContent =
+      pf.attack_limit_wan > 0 ? `上限 ${pf.attack_limit_wan}萬` : '—';
+    document.getElementById('pf-defense-val').textContent =
+      pf.defense_mv_wan > 0 ? `${pf.defense_mv_wan}萬` : '—';
+
+    // 使用率條
+    document.getElementById('usage-pct-label').textContent = `${usagePct}%`;
+    document.getElementById('usage-bar-fill').style.width = `${Math.min(100, usagePct)}%`;
+    document.getElementById('usage-bar-fill').style.background =
+      usagePct >= 95 ? 'linear-gradient(to right,#7f1d1d,#f87171)' :
+      usagePct >= 80 ? 'linear-gradient(to right,#92400e,#fbbf24)' :
+      'linear-gradient(to right,#166534,#4ade80)';
   }
 
-  // ③ 今日行動一句話
+  // ③ 雙P0觸發
+  renderTriggerBlock(data.trigger,     'trigger-bar-tw','trigger-text-tw','trigger-action-tw','trigger-ma-tw','price_0050');
+  renderTriggerBlock(data.spy_trigger, 'trigger-bar-us','trigger-text-us','trigger-action-us','trigger-ma-us','price_spy');
+
+  // ④ 今日行動一句話
   const ind = data.stocks.filter(s => !s.is_market);
   const buyCnt = ind.filter(s => s.lamp === 'buy').length;
   const addCnt = ind.filter(s => s.add_trigger).length;
   const ms_val = data.market_status;
-  const tr_status = tr ? tr.trigger_status : 'normal';
+  const tw_status = data.trigger ? data.trigger.trigger_status : 'normal';
+  const us_status = data.spy_trigger ? data.spy_trigger.trigger_status : 'normal';
+  const worst_trigger = ['extreme','main','warning','normal','unknown']
+    .find(t => tw_status===t || us_status===t) || 'normal';
 
   let actionEmoji, actionText, actionSub;
-
-  if (ms_val === 'bear' && tr_status === 'extreme') {
+  if (worst_trigger === 'extreme') {
     actionEmoji = '🚨'; actionText = '極端觸發 — 考慮啟動Lombard';
-    actionSub = `VIX恐慌+跌破年線，避險儲備全力部署`;
-  } else if (ms_val === 'bear' && tr_status === 'main') {
+    actionSub = 'VIX恐慌+跌破年線，避險儲備全力部署';
+  } else if (worst_trigger === 'main') {
     actionEmoji = '⚡'; actionText = '主觸發 — 分批加碼啟動';
-    actionSub = `跌破半年線+BB超賣，調用避險儲備`;
-  } else if (tr_status === 'warning') {
+    actionSub = '跌破半年線+BB超賣，調用避險儲備';
+  } else if (worst_trigger === 'warning') {
     actionEmoji = '💤'; actionText = '預警層 — 準備資金，暫不行動';
-    actionSub = `0050跌破季線，密切觀察是否進一步跌破半年線`;
+    actionSub = '跌破季線，密切觀察是否進一步跌破半年線';
   } else if (buyCnt > 0) {
     actionEmoji = '🚀'; actionText = `進攻時機 — ${buyCnt}支燈號通過`;
-    actionSub = ind.filter(s => s.lamp === 'buy').map(s => s.name).join('、');
+    actionSub = ind.filter(s=>s.lamp==='buy').map(s=>s.name).join('、');
   } else if (addCnt > 0) {
     actionEmoji = '⚡'; actionText = `可加碼 — ${addCnt}支長期加碼觸發`;
-    actionSub = ind.filter(s => s.add_trigger).slice(0, 3).map(s => s.name).join('、');
+    actionSub = ind.filter(s=>s.add_trigger).slice(0,3).map(s=>s.name).join('、');
   } else {
     actionEmoji = '💤'; actionText = '不動 — 今日無明確行動訊號';
-    actionSub = ms_val === 'bear' ? '大盤空頭，保留現金等待機會' : '持倉為主，等待系統訊號';
+    actionSub = ms_val==='bear' ? '大盤空頭，保留現金等待機會' : '持倉為主，等待系統訊號';
   }
-
   document.getElementById('cc-action-text').innerHTML =
     `<span style="font-size:1rem">${actionEmoji}</span> <span>${esc(actionText)}</span>`;
   document.getElementById('cc-action-text').style.color =
-    actionEmoji === '🚨' ? '#f87171' :
-    actionEmoji === '🚀' ? '#4ade80' :
-    actionEmoji === '⚡' ? '#fb923c' : '#4a5a6a';
+    actionEmoji==='🚨'?'#f87171':actionEmoji==='🚀'?'#4ade80':actionEmoji==='⚡'?'#fb923c':'#4a5a6a';
   document.getElementById('cc-action-sub').textContent = actionSub;
 }
 
@@ -629,7 +777,7 @@ function renderCard(s) {
 
   const inds=[["H值(日)",s.h_day?.toFixed(4)],["H值(週)",s.h_week??"N/A"],["DI+",s.di_pos],["DI-",s.di_neg],["ATR",s.atr],["月漲跌",cs(s.month_chg)],["年漲跌",cs(s.year_chg)],["BB位置",s.bb_pct+"%"]].map(([k,v])=>`<div class="ind-cell"><div class="ik">${esc(k)}</div><div class="iv">${esc(v??'—')}</div></div>`).join("");
 
-  return`<div class="card ${isOpen?"open":""}" id="card-${esc(s.symbol)}"><div class="card-head" onclick="toggleCard('${esc(s.symbol)}')"><div class="row-title"><div class="name-area"><span class="stock-name" style="color:${s.is_market?"#8899bb":"#e2e8f0"}">${esc(s.name)}</span>${s.is_market?'<span class="market-tag">大盤</span>':''}<span class="symbol">${esc(s.symbol)}</span>${!s.is_market?renderDistTag(s):''}</div><div style="display:flex;align-items:center"><span class="lamp-badge" style="background:${lc.bg};color:${lc.fg};border:1px solid ${lc.bd}">${lc.label}</span><span class="chevron">▼</span></div></div><div class="row-price"><span class="price" style="color:${s.is_market?"#8899bb":"#f1f5f9"}">${(s.price||0).toLocaleString()}</span><span class="day-chg" style="color:${cc(s.day_chg)}">${cs(s.day_chg)}</span><span class="week-chg">週${cs(s.week_chg)}</span></div>${advice&&posStatus!=="holding"&&posStatus!=="defense"?`<div class="advice-box ${aClass}">${esc(advice)}</div>`:""} ${posBlock}${!posStatus?ltBlock:""}${waveBlock}<div class="gates">${gH(s.gate_h,`H ${(s.h_day||0).toFixed(3)}(${hVs})`)}${gH(s.gate_adx,`ADX ${s.adx}${s.adx_rising?"↑":"↓"}`)}${gH(s.gate_macd,MACD_LABEL[s.macd_status]||s.macd_status)}${gH(s.gate_vol,`量 ${s.vol_ratio}x`,!s.vol_reliable)}${gH(s.gate_bb,`BB ${s.bb_pct}%`)}</div><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${(s.score/5)*100}%;background:${SCORE_COLOR(s.score)}"></div></div><span class="score-label">${s.score}/5</span></div></div><div class="card-body">${ltDetail}<div class="section-title">支撐 ／ 壓力</div><div class="sup-res"><div class="sup-box"><div class="sl" style="color:#4ade80">▲ 支撐</div><div class="sv">${s.support}</div><div class="sd">距今 ${s.dist_to_support}%</div></div><div class="res-box"><div class="sl" style="color:#f87171">▼ 壓力</div><div class="sv">${s.resistance}</div></div></div><div class="section-title">目標價位</div><div class="grid2" style="margin-bottom:10px"><div class="ptag"><div class="pl">目標一（壓力位）</div><div class="pv" style="color:#fbbf24">${s.target1}</div></div><div class="ptag"><div class="pl">目標二（壓力×1.05）</div><div class="pv" style="color:#fbbf24">${s.target2}</div></div></div><div class="section-title">詳細指標</div><div class="indicators">${inds}</div></div></div>`;
+  return`<div class="card ${isOpen?"open":""} ${posStatus==="holding"?"holding-card":posStatus==="defense"?"defense-card":""}" id="card-${esc(s.symbol)}"><div class="card-head" onclick="toggleCard('${esc(s.symbol)}')"><div class="row-title"><div class="name-area"><span class="stock-name" style="color:${s.is_market?"#8899bb":posStatus==="defense"?"#4a7aaa":posStatus==="holding"?"#e2e8f0":"#ccd5e0"}">${esc(s.name)}</span>${s.is_market?'<span class="market-tag">大盤</span>':''}<span class="symbol">${esc(s.symbol)}</span>${!s.is_market?renderDistTag(s):''}</div><div style="display:flex;align-items:center"><span class="lamp-badge ${posStatus?"dimmed":""}" style="background:${lc.bg};color:${lc.fg};border:1px solid ${lc.bd}">${lc.label}</span><span class="chevron">▼</span></div></div><div class="row-price"><span class="price" style="color:${s.is_market?"#8899bb":"#f1f5f9"}">${(s.price||0).toLocaleString()}</span><span class="day-chg" style="color:${cc(s.day_chg)}">${cs(s.day_chg)}</span><span class="week-chg">週${cs(s.week_chg)}</span></div>${advice&&!posStatus?`<div class="advice-box ${aClass}">${esc(advice)}</div>`:""} ${posBlock}${!posStatus?ltBlock:""}${waveBlock}<div class="gates ${posStatus?"dimmed":""}">${gH(s.gate_h,`H ${(s.h_day||0).toFixed(3)}(${hVs})`)}${gH(s.gate_adx,`ADX ${s.adx}${s.adx_rising?"↑":"↓"}`)}${gH(s.gate_macd,MACD_LABEL[s.macd_status]||s.macd_status)}${gH(s.gate_vol,`量 ${s.vol_ratio}x`,!s.vol_reliable)}${gH(s.gate_bb,`BB ${s.bb_pct}%`)}</div><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${(s.score/5)*100}%;background:${posStatus?'#1e2535':SCORE_COLOR(s.score)}"></div></div><span class="score-label" style="color:${posStatus?"#2a3040":""}">${s.score}/5</span></div></div><div class="card-body">${ltDetail}<div class="section-title">支撐 ／ 壓力</div><div class="sup-res"><div class="sup-box"><div class="sl" style="color:#4ade80">▲ 支撐</div><div class="sv">${s.support}</div><div class="sd">距今 ${s.dist_to_support}%</div></div><div class="res-box"><div class="sl" style="color:#f87171">▼ 壓力</div><div class="sv">${s.resistance}</div></div></div><div class="section-title">目標價位</div><div class="grid2" style="margin-bottom:10px"><div class="ptag"><div class="pl">目標一（壓力位）</div><div class="pv" style="color:#fbbf24">${s.target1}</div></div><div class="ptag"><div class="pl">目標二（壓力×1.05）</div><div class="pv" style="color:#fbbf24">${s.target2}</div></div></div><div class="section-title">詳細指標</div><div class="indicators">${inds}</div></div></div>`;
 }
 
 function render(data) {
@@ -652,15 +800,28 @@ function render(data) {
 
   // 防守部位獨立區塊
   const defenseStocks=sorted.filter(s=>s.lt_position?.status==='defense');
-  const otherStocks=sorted.filter(s=>s.lt_position?.status!=='defense');
+  const holdingStocks=sorted.filter(s=>s.lt_position?.status==='holding');
+  const otherStocks=sorted.filter(s=>!s.lt_position?.status||s.lt_position?.status==='watching');
 
   let cardsHtml='';
+
+  // 防守區塊
   if(defenseStocks.length){
-    cardsHtml+=`<div style="font-size:0.58rem;color:#2a3a5a;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;margin-top:4px">防守部位</div>`;
+    cardsHtml+=`<div class="section-divider defense"><div class="sd-line"></div><div class="sd-label">防守部位</div></div>`;
     cardsHtml+=defenseStocks.map(renderCard).join('');
-    cardsHtml+=`<div style="font-size:0.58rem;color:#1e2535;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;margin-top:10px">進攻部位 ／ 觀察標的</div>`;
   }
-  cardsHtml+=otherStocks.map(renderCard).join('');
+
+  // 進攻持倉區塊
+  if(holdingStocks.length){
+    cardsHtml+=`<div class="section-divider attack"><div class="sd-line"></div><div class="sd-label">進攻部位 — 持倉中</div></div>`;
+    cardsHtml+=holdingStocks.map(renderCard).join('');
+  }
+
+  // 觀察 + 一般標的
+  if(otherStocks.length){
+    cardsHtml+=`<div class="section-divider" style="margin-top:${(holdingStocks.length||defenseStocks.length)?'14px':'4px'}"><div class="sd-line" style="background:linear-gradient(to right,transparent,#2a2d3a)"></div><div class="sd-label" style="color:#3a4a5a;background:#0f1117;border:1px solid #2a2d3a">觀察標的</div></div>`;
+    cardsHtml+=otherStocks.map(renderCard).join('');
+  }
 
   document.getElementById("cards").innerHTML=cardsHtml;
   document.getElementById("empty").style.display=sorted.length?"none":"block";
