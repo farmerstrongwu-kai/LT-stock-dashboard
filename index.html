@@ -532,28 +532,85 @@ function renderCard(s) {
   const ltc=LT_COLOR[s.lt_rating]||LT_COLOR["LT-C"];
   const advice=s.advice||"";
   const aClass=adviceClass(advice);
+  const pos=s.lt_position;
+  const posStatus=pos?pos.status:null;
 
-  let ltBlock="";
-  if(!s.is_market&&hasLT){
-    let posBlock="";
-    if(s.lt_position){
-      const p=s.lt_position;
-      const pnlC=p.lt_pnl!=null&&p.lt_pnl>=0?"#4ade80":"#f87171";
-      posBlock=`<div class="lt-pos-box"><div class="lp-label">長期持倉</div><div class="lp-row"><span class="lp-item">核心 ${esc(p.core_size)}</span><span class="lp-item">均成本 ${p.avg_cost||"未設定"}</span><span class="lp-pnl" style="color:${pnlC}">${p.lt_pnl!=null?(p.lt_pnl>=0?"+":"")+p.lt_pnl+"%":"—"}</span></div><div style="font-size:0.56rem;color:#3a5a7a;margin-top:2px">已加碼 ${p.add_count} 次</div></div>`;
+  // ── 持倉區塊（holding / defense）──────────────
+  let posBlock="";
+  if(pos && (posStatus==="holding"||posStatus==="defense")){
+    const mv=pos.market_value;
+    const mvStr=mv>0?`NT$${mv.toLocaleString()}`:"—";
+    const retStr=pos.return_pct!=null
+      ?`<span style="color:${pos.return_pct>=0?"#4ade80":"#f87171"};font-weight:700;margin-left:auto">${pos.return_pct>=0?"+":""}${pos.return_pct}%</span>`
+      :"";
+    const statusLabel=posStatus==="defense"
+      ?`<span style="font-size:0.52rem;background:#0a0f1a;border:1px solid #1e3a5f;color:#4a7aaa;padding:1px 5px;border-radius:3px;margin-left:4px">防守</span>`
+      :`<span style="font-size:0.52rem;background:#081408;border:1px solid #166534;color:#4ade80;padding:1px 5px;border-radius:3px;margin-left:4px">持倉中</span>`;
+
+    // H值健康度
+    const hw=s.h_week;
+    const hwOk=hw!=null&&hw>=0.55;
+    const hwStr=hw!=null?hw.toFixed(3):"N/A";
+    const hwColor=hwOk?"#4ade80":"#f87171";
+
+    // 出場警示
+    const stopAlerts=s.lt_stop_alerts||[];
+    const stopBlock=stopAlerts.length
+      ?`<div style="background:#1a0a00;border:1px solid #c2410c;border-radius:5px;padding:4px 8px;margin-top:5px;font-size:0.58rem;color:#fb923c">${stopAlerts.map(esc).join("<br>")}</div>`
+      :`<div style="font-size:0.58rem;color:#2a5a3a;margin-top:4px">✓ 出場警示：無</div>`;
+
+    // 加碼區塊（defense不顯示加碼）
+    let addBlock="";
+    if(posStatus==="holding"){
+      if(s.add_blocked){
+        addBlock=`<div style="font-size:0.6rem;color:#6a3a3a;margin-top:5px">🚫 ${esc(s.add_block_reason)}</div>`;
+      } else if(s.add_trigger){
+        const sigs=(s.add_signals||[]).map(sg=>`<span class="add-sig">${esc(sg)}</span>`).join("");
+        addBlock=`<div class="add-trigger-box"><div class="atitle">⚡ 加碼條件觸發</div><div class="add-sigs">${sigs}</div></div>`;
+      } else {
+        addBlock=`<div style="font-size:0.58rem;color:#2a3a4a;margin-top:4px">加碼條件：未觸發</div>`;
+      }
     }
+
+    posBlock=`
+      <div class="lt-pos-box" style="margin-bottom:6px">
+        <div class="lp-label" style="display:flex;align-items:center">
+          持倉狀態 ${statusLabel}
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+          <span style="font-size:0.65rem;color:#7aaad0">${pos.shares>0?pos.shares.toLocaleString()+"股":"—"}</span>
+          <span style="font-size:0.82rem;font-weight:700;color:#e2e8f0">${mvStr}</span>
+          ${retStr}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:5px;align-items:center">
+          <span style="font-size:0.58rem;color:#3a5a7a">週H ${hwStr}</span>
+          <span style="font-size:0.7rem;color:${hwColor}">${hwOk?"✓ 結構健康":"⚠️ 結構弱化"}</span>
+          <span style="font-size:0.58rem;color:#3a5a7a;margin-left:auto">已加碼 ${pos.add_count} 次</span>
+        </div>
+        ${stopBlock}
+        ${addBlock}
+        <div style="font-size:0.56rem;color:#2a3040;margin-top:6px;border-top:1px solid #1a1d27;padding-top:4px">
+          波段燈號 ${lc.label}（供參考，非持倉決策依據）
+        </div>
+      </div>`;
+  }
+
+  // ── LT Badge + 加碼區塊（非持倉標的）──────────
+  let ltBlock="";
+  if(!s.is_market&&hasLT&&!posStatus){
     let addBlock="";
     if(s.add_blocked){addBlock=`<div class="add-blocked">🚫 ${esc(s.add_block_reason)}</div>`;}
     else if(s.add_trigger){
       const sigs=(s.add_signals||[]).map(sg=>`<span class="add-sig">${esc(sg)}</span>`).join("");
       addBlock=`<div class="add-trigger-box"><div class="atitle">⚡ 長期加碼觸發</div><div class="add-sigs">${sigs}</div></div>`;
     }
-    let stopBlock="";
-    if(s.lt_stop_alert&&s.lt_stop_alerts?.length){stopBlock=`<div style="background:#1a0a00;border:1px solid #c2410c;border-radius:5px;padding:4px 8px;margin-top:5px;font-size:0.58rem;color:#fb923c">${s.lt_stop_alerts.map(esc).join("<br>")}</div>`;}
-    ltBlock=`<div style="margin-bottom:6px"><div class="lt-badge" style="background:${ltc.bg};border:1px solid ${ltc.bd}"><span class="lt-code" style="color:${ltc.c}">${esc(s.lt_rating)}</span><span class="lt-text" style="color:${ltc.c}">${esc(s.lt_rating_text)}</span></div>${posBlock}${addBlock}${stopBlock}</div>`;
+    let stopBlock2="";
+    if(s.lt_stop_alert&&s.lt_stop_alerts?.length){stopBlock2=`<div style="background:#1a0a00;border:1px solid #c2410c;border-radius:5px;padding:4px 8px;margin-top:5px;font-size:0.58rem;color:#fb923c">${s.lt_stop_alerts.map(esc).join("<br>")}</div>`;}
+    ltBlock=`<div style="margin-bottom:6px"><div class="lt-badge" style="background:${ltc.bg};border:1px solid ${ltc.bd}"><span class="lt-code" style="color:${ltc.c}">${esc(s.lt_rating)}</span><span class="lt-text" style="color:${ltc.c}">${esc(s.lt_rating_text)}</span></div>${addBlock}${stopBlock2}</div>`;
   }
 
   let waveBlock="";
-  if(!s.is_market){
+  if(!s.is_market && posStatus!=="defense"){
     const rn_ok=s.rr_now_ok,re_ok=s.rr_entry_ok;
     waveBlock=`${renderBuyProgress(s)}<div class="grid2" style="margin-bottom:5px"><div class="ptag"><div class="pl">買點區間</div><div class="pv" style="color:#4ade80">${s.buy_low}~${s.buy_high}</div></div><div class="ptag"><div class="pl">ATR停損 (-${s.stop_pct}%)</div><div class="pv" style="color:#f87171">${s.stop_atr}</div></div></div><div class="grid2" style="margin-bottom:7px"><div class="rr-box" style="background:${rn_ok?"#081408":"#140808"};border:1px solid ${rn_ok?"#166534":"#7f1d1d"}"><div class="rl" style="color:${rn_ok?"#4ade80":"#f87171"}">現價風報比</div><div class="rv" style="color:${rn_ok?"#4ade80":"#f87171"}">${s.rr_now??'—'}</div></div><div class="rr-box" style="background:#0f1117;border:1px solid #1e2130"><div class="rl" style="color:#444">回測後風報比</div><div class="rv" style="color:${re_ok?"#4ade80":"#555"}">${s.rr_entry??'—'}</div></div></div>`;
   }
@@ -572,7 +629,7 @@ function renderCard(s) {
 
   const inds=[["H值(日)",s.h_day?.toFixed(4)],["H值(週)",s.h_week??"N/A"],["DI+",s.di_pos],["DI-",s.di_neg],["ATR",s.atr],["月漲跌",cs(s.month_chg)],["年漲跌",cs(s.year_chg)],["BB位置",s.bb_pct+"%"]].map(([k,v])=>`<div class="ind-cell"><div class="ik">${esc(k)}</div><div class="iv">${esc(v??'—')}</div></div>`).join("");
 
-  return`<div class="card ${isOpen?"open":""}" id="card-${esc(s.symbol)}"><div class="card-head" onclick="toggleCard('${esc(s.symbol)}')"><div class="row-title"><div class="name-area"><span class="stock-name" style="color:${s.is_market?"#8899bb":"#e2e8f0"}">${esc(s.name)}</span>${s.is_market?'<span class="market-tag">大盤</span>':''}<span class="symbol">${esc(s.symbol)}</span>${!s.is_market?renderDistTag(s):''}</div><div style="display:flex;align-items:center"><span class="lamp-badge" style="background:${lc.bg};color:${lc.fg};border:1px solid ${lc.bd}">${lc.label}</span><span class="chevron">▼</span></div></div><div class="row-price"><span class="price" style="color:${s.is_market?"#8899bb":"#f1f5f9"}">${(s.price||0).toLocaleString()}</span><span class="day-chg" style="color:${cc(s.day_chg)}">${cs(s.day_chg)}</span><span class="week-chg">週${cs(s.week_chg)}</span></div>${advice?`<div class="advice-box ${aClass}">${esc(advice)}</div>`:""} ${!s.is_market?ltBlock:""}${waveBlock}<div class="gates">${gH(s.gate_h,`H ${(s.h_day||0).toFixed(3)}(${hVs})`)}${gH(s.gate_adx,`ADX ${s.adx}${s.adx_rising?"↑":"↓"}`)}${gH(s.gate_macd,MACD_LABEL[s.macd_status]||s.macd_status)}${gH(s.gate_vol,`量 ${s.vol_ratio}x`,!s.vol_reliable)}${gH(s.gate_bb,`BB ${s.bb_pct}%`)}</div><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${(s.score/5)*100}%;background:${SCORE_COLOR(s.score)}"></div></div><span class="score-label">${s.score}/5</span></div></div><div class="card-body">${ltDetail}<div class="section-title">支撐 ／ 壓力</div><div class="sup-res"><div class="sup-box"><div class="sl" style="color:#4ade80">▲ 支撐</div><div class="sv">${s.support}</div><div class="sd">距今 ${s.dist_to_support}%</div></div><div class="res-box"><div class="sl" style="color:#f87171">▼ 壓力</div><div class="sv">${s.resistance}</div></div></div><div class="section-title">目標價位</div><div class="grid2" style="margin-bottom:10px"><div class="ptag"><div class="pl">目標一（壓力位）</div><div class="pv" style="color:#fbbf24">${s.target1}</div></div><div class="ptag"><div class="pl">目標二（壓力×1.05）</div><div class="pv" style="color:#fbbf24">${s.target2}</div></div></div><div class="section-title">詳細指標</div><div class="indicators">${inds}</div></div></div>`;
+  return`<div class="card ${isOpen?"open":""}" id="card-${esc(s.symbol)}"><div class="card-head" onclick="toggleCard('${esc(s.symbol)}')"><div class="row-title"><div class="name-area"><span class="stock-name" style="color:${s.is_market?"#8899bb":"#e2e8f0"}">${esc(s.name)}</span>${s.is_market?'<span class="market-tag">大盤</span>':''}<span class="symbol">${esc(s.symbol)}</span>${!s.is_market?renderDistTag(s):''}</div><div style="display:flex;align-items:center"><span class="lamp-badge" style="background:${lc.bg};color:${lc.fg};border:1px solid ${lc.bd}">${lc.label}</span><span class="chevron">▼</span></div></div><div class="row-price"><span class="price" style="color:${s.is_market?"#8899bb":"#f1f5f9"}">${(s.price||0).toLocaleString()}</span><span class="day-chg" style="color:${cc(s.day_chg)}">${cs(s.day_chg)}</span><span class="week-chg">週${cs(s.week_chg)}</span></div>${advice&&posStatus!=="holding"&&posStatus!=="defense"?`<div class="advice-box ${aClass}">${esc(advice)}</div>`:""} ${posBlock}${!posStatus?ltBlock:""}${waveBlock}<div class="gates">${gH(s.gate_h,`H ${(s.h_day||0).toFixed(3)}(${hVs})`)}${gH(s.gate_adx,`ADX ${s.adx}${s.adx_rising?"↑":"↓"}`)}${gH(s.gate_macd,MACD_LABEL[s.macd_status]||s.macd_status)}${gH(s.gate_vol,`量 ${s.vol_ratio}x`,!s.vol_reliable)}${gH(s.gate_bb,`BB ${s.bb_pct}%`)}</div><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${(s.score/5)*100}%;background:${SCORE_COLOR(s.score)}"></div></div><span class="score-label">${s.score}/5</span></div></div><div class="card-body">${ltDetail}<div class="section-title">支撐 ／ 壓力</div><div class="sup-res"><div class="sup-box"><div class="sl" style="color:#4ade80">▲ 支撐</div><div class="sv">${s.support}</div><div class="sd">距今 ${s.dist_to_support}%</div></div><div class="res-box"><div class="sl" style="color:#f87171">▼ 壓力</div><div class="sv">${s.resistance}</div></div></div><div class="section-title">目標價位</div><div class="grid2" style="margin-bottom:10px"><div class="ptag"><div class="pl">目標一（壓力位）</div><div class="pv" style="color:#fbbf24">${s.target1}</div></div><div class="ptag"><div class="pl">目標二（壓力×1.05）</div><div class="pv" style="color:#fbbf24">${s.target2}</div></div></div><div class="section-title">詳細指標</div><div class="indicators">${inds}</div></div></div>`;
 }
 
 function render(data) {
@@ -580,13 +637,32 @@ function render(data) {
   renderMarket(data);
   renderHighlights(data.highlights);
   renderDailySummary(data.daily_summary);
+
   const sorted=[...data.stocks].sort((a,b)=>{
     if(a.is_market&&!b.is_market)return -1;
     if(!a.is_market&&b.is_market)return 1;
+    // 持倉中優先，防守次之，其他依燈號
+    const posA=a.lt_position?.status||'none';
+    const posB=b.lt_position?.status||'none';
+    const posOrder={'holding':0,'defense':1,'watching':2,'none':3};
+    if(posOrder[posA]!==posOrder[posB])return posOrder[posA]-posOrder[posB];
     const o={buy:0,wait:1,avoid:2};
     return(o[a.lamp]??9)-(o[b.lamp]??9)||b.score-a.score;
   });
-  document.getElementById("cards").innerHTML=sorted.map(renderCard).join("");
+
+  // 防守部位獨立區塊
+  const defenseStocks=sorted.filter(s=>s.lt_position?.status==='defense');
+  const otherStocks=sorted.filter(s=>s.lt_position?.status!=='defense');
+
+  let cardsHtml='';
+  if(defenseStocks.length){
+    cardsHtml+=`<div style="font-size:0.58rem;color:#2a3a5a;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;margin-top:4px">防守部位</div>`;
+    cardsHtml+=defenseStocks.map(renderCard).join('');
+    cardsHtml+=`<div style="font-size:0.58rem;color:#1e2535;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;margin-top:10px">進攻部位 ／ 觀察標的</div>`;
+  }
+  cardsHtml+=otherStocks.map(renderCard).join('');
+
+  document.getElementById("cards").innerHTML=cardsHtml;
   document.getElementById("empty").style.display=sorted.length?"none":"block";
 }
 
